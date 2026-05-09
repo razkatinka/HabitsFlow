@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Habit Tracker — Login</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="auth-page">
+
+  <div class="auth-card">
+    <div class="logo">
+      <span class="logo-icon">🔥</span>
+      <h1>HabitFlow</h1>
+      <p class="tagline">Build better habits, one day at a time.</p>
+    </div>
+
+    <!-- Tab switcher -->
+    <div class="tab-bar">
+      <button class="tab active" id="tab-login" onclick="showTab('login')">Login</button>
+      <button class="tab" id="tab-register" onclick="showTab('register')">Register</button>
+    </div>
+
+    <!-- Login form -->
+    <form id="form-login" class="auth-form" onsubmit="handleLogin(event)">
+      <div class="field">
+        <label for="login-email">Email</label>
+        <input type="email" id="login-email" placeholder="you@example.com" required />
+      </div>
+      <div class="field">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" required />
+      </div>
+      <button type="submit" class="btn btn-primary" id="btn-login">Login</button>
+      <p id="login-error" class="form-error hidden"></p>
+    </form>
+
+    <!-- Register form -->
+    <form id="form-register" class="auth-form hidden" onsubmit="handleRegister(event)">
+      <div class="field">
+        <label for="reg-email">Email</label>
+        <input type="email" id="reg-email" placeholder="you@example.com" required />
+      </div>
+      <div class="field">
+        <label for="reg-password">Password</label>
+        <input type="password" id="reg-password" placeholder="Min 6 characters" required minlength="6" />
+      </div>
+      <button type="submit" class="btn btn-primary" id="btn-register">Create account</button>
+      <p id="register-msg" class="form-info hidden"></p>
+      <p id="register-error" class="form-error hidden"></p>
+    </form>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // Redirect if already logged in
+    if (localStorage.getItem("habit_token")) {
+      window.location.href = "dashboard.html";
+    }
+
+    function showTab(tab) {
+      document.getElementById("form-login").classList.toggle("hidden", tab !== "login");
+      document.getElementById("form-register").classList.toggle("hidden", tab !== "register");
+      document.getElementById("tab-login").classList.toggle("active", tab === "login");
+      document.getElementById("tab-register").classList.toggle("active", tab === "register");
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById("btn-login");
+      const errEl = document.getElementById("login-error");
+      btn.disabled = true;
+      btn.textContent = "Logging in…";
+      errEl.classList.add("hidden");
+
+      const email = document.getElementById("login-email").value;
+      const password = document.getElementById("login-password").value;
+
+      try {
+        const res = await apiFetch("/auth/login", "POST", { email, password }, false);
+        localStorage.setItem("habit_token", res.access_token);
+        localStorage.setItem("habit_user", JSON.stringify(res.user));
+        window.location.href = "dashboard.html";
+      } catch (err) {
+        errEl.textContent = err.message || "Login failed";
+        errEl.classList.remove("hidden");
+        btn.disabled = false;
+        btn.textContent = "Login";
+      }
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      const btn = document.getElementById("btn-register");
+      const msgEl = document.getElementById("register-msg");
+      const errEl = document.getElementById("register-error");
+      btn.disabled = true;
+      btn.textContent = "Creating account…";
+      msgEl.classList.add("hidden");
+      errEl.classList.add("hidden");
+
+      const email = document.getElementById("reg-email").value;
+      const password = document.getElementById("reg-password").value;
+
+      try {
+        await apiFetch("/auth/register", "POST", { email, password }, false);
+        msgEl.textContent = "Account created! Check your email to confirm, then log in.";
+        msgEl.classList.remove("hidden");
+        btn.disabled = false;
+        btn.textContent = "Create account";
+      } catch (err) {
+        errEl.textContent = err.message || "Registration failed";
+        errEl.classList.remove("hidden");
+        btn.disabled = false;
+        btn.textContent = "Create account";
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Habit Tracker — Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="dashboard-page">
+
+  <!-- Top nav -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <span class="topbar-logo">🔥 HabitFlow</span>
+      <div class="topbar-right">
+        <span id="user-email" class="user-email"></span>
+        <button class="btn btn-ghost" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+
+    <!-- Date heading -->
+    <section class="section-heading">
+      <h2 id="today-label">Today</h2>
+      <p id="today-date" class="subtext"></p>
+    </section>
+
+    <!-- Progress bar -->
+    <section class="progress-section">
+      <div class="progress-bar-track">
+        <div id="progress-bar" class="progress-bar-fill" style="width:0%"></div>
+      </div>
+      <p id="progress-label" class="progress-label">0 / 0 done</p>
+    </section>
+
+    <!-- Add habit form -->
+    <section class="add-habit-section">
+      <form id="add-habit-form" onsubmit="handleAddHabit(event)">
+        <div class="add-habit-row">
+          <input
+            type="text"
+            id="new-habit-name"
+            placeholder="New habit (e.g. Drink water)"
+            maxlength="80"
+            required
+          />
+          <button type="submit" class="btn btn-primary" id="btn-add">+ Add</button>
+        </div>
+        <p id="add-error" class="form-error hidden"></p>
+      </form>
+    </section>
+
+    <!-- Habits list -->
+    <section class="habits-section">
+      <div id="habits-loading" class="loading-msg">Loading habits…</div>
+      <div id="habits-empty" class="empty-msg hidden">
+        No habits yet. Add your first one above!
+      </div>
+      <ul id="habits-list" class="habits-list hidden"></ul>
+    </section>
+
+  </main>
+
+  <!-- Streak modal -->
+  <div id="streak-modal" class="modal-overlay hidden" onclick="closeStreakModal(event)">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeStreakModal()">×</button>
+      <div class="modal-icon">🔥</div>
+      <h3 id="modal-habit-name"></h3>
+      <p class="modal-streak-label">Current streak</p>
+      <p id="modal-streak-count" class="modal-streak-count"></p>
+      <p id="modal-streak-sub" class="modal-streak-sub"></p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // Guard: redirect to login if not authenticated
+    const token = localStorage.getItem("habit_token");
+    if (!token) window.location.href = "index.html";
+
+    const user = JSON.parse(localStorage.getItem("habit_user") || "{}");
+    document.getElementById("user-email").textContent = user.email || "";
+
+    // Set today's date
+    const today = new Date();
+    document.getElementById("today-label").textContent = today.toLocaleDateString("en-US", { weekday: "long" });
+    document.getElementById("today-date").textContent = today.toLocaleDateString("en-US", {
+      year: "numeric", month: "long", day: "numeric",
+    });
+
+    // -----------------------------------------------------------------------
+    // Render helpers
+    // -----------------------------------------------------------------------
+
+    function updateProgress(habits) {
+      const done = habits.filter(h => h.completed_today).length;
+      const total = habits.length;
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      document.getElementById("progress-bar").style.width = pct + "%";
+      document.getElementById("progress-label").textContent = `${done} / ${total} done`;
+    }
+
+    function renderHabits(habits) {
+      const list = document.getElementById("habits-list");
+      const empty = document.getElementById("habits-empty");
+      const loading = document.getElementById("habits-loading");
+
+      loading.classList.add("hidden");
+
+      if (!habits.length) {
+        empty.classList.remove("hidden");
+        list.classList.add("hidden");
+        return;
+      }
+
+      empty.classList.add("hidden");
+      list.classList.remove("hidden");
+      list.innerHTML = "";
+
+      habits.forEach(habit => {
+        const li = document.createElement("li");
+        li.className = "habit-item" + (habit.completed_today ? " done" : "");
+        li.dataset.id = habit.id;
+
+        li.innerHTML = `
+          <button class="check-btn" onclick="toggleHabit('${habit.id}')" title="${habit.completed_today ? 'Mark incomplete' : 'Mark complete'}">
+            ${habit.completed_today ? "✅" : "⬜"}
+          </button>
+          <span class="habit-name">${escapeHtml(habit.name)}</span>
+          <div class="habit-actions">
+            <button class="btn btn-ghost btn-sm" onclick="showStreak('${habit.id}', '${escapeHtml(habit.name)}')">🔥 Streak</button>
+            <button class="btn btn-ghost btn-sm btn-danger" onclick="deleteHabit('${habit.id}')">🗑</button>
+          </div>
+        `;
+        list.appendChild(li);
+      });
+
+      updateProgress(habits);
+    }
+
+    // -----------------------------------------------------------------------
+    // API actions
+    // -----------------------------------------------------------------------
+
+    let habitsCache = [];
+
+    async function loadHabits() {
+      try {
+        habitsCache = await apiFetch("/habits", "GET");
+        renderHabits(habitsCache);
+      } catch (err) {
+        if (err.status === 401) {
+          logout();
+        } else {
+          document.getElementById("habits-loading").textContent = "Failed to load habits.";
+        }
+      }
+    }
+
+    async function handleAddHabit(e) {
+      e.preventDefault();
+      const input = document.getElementById("new-habit-name");
+      const errEl = document.getElementById("add-error");
+      const btn = document.getElementById("btn-add");
+      const name = input.value.trim();
+      if (!name) return;
+
+      btn.disabled = true;
+      errEl.classList.add("hidden");
+
+      try {
+        const habit = await apiFetch("/habits", "POST", { name });
+        habitsCache.push(habit);
+        renderHabits(habitsCache);
+        input.value = "";
+      } catch (err) {
+        errEl.textContent = err.message || "Failed to add habit";
+        errEl.classList.remove("hidden");
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function toggleHabit(habitId) {
+      try {
+        const result = await apiFetch(`/habits/${habitId}/check`, "POST");
+        const habit = habitsCache.find(h => h.id === habitId);
+        if (habit) habit.completed_today = result.completed;
+        renderHabits(habitsCache);
+      } catch (err) {
+        alert("Could not update habit: " + (err.message || "unknown error"));
+      }
+    }
+
+    async function deleteHabit(habitId) {
+      if (!confirm("Delete this habit and all its history?")) return;
+      try {
+        await apiFetch(`/habits/${habitId}`, "DELETE");
+        habitsCache = habitsCache.filter(h => h.id !== habitId);
+        renderHabits(habitsCache);
+      } catch (err) {
+        alert("Could not delete habit: " + (err.message || "unknown error"));
+      }
+    }
+
+    async function showStreak(habitId, habitName) {
+      try {
+        const data = await apiFetch(`/habits/${habitId}/streak`, "GET");
+        document.getElementById("modal-habit-name").textContent = habitName;
+        document.getElementById("modal-streak-count").textContent = data.streak;
+        document.getElementById("modal-streak-sub").textContent =
+          data.streak === 1 ? "day in a row" :
+          data.streak === 0 ? "Start today!" : "days in a row 🎉";
+        document.getElementById("streak-modal").classList.remove("hidden");
+      } catch (err) {
+        alert("Could not load streak.");
+      }
+    }
+
+    function closeStreakModal(e) {
+      if (!e || e.target === document.getElementById("streak-modal") || e.currentTarget.classList.contains("modal-close")) {
+        document.getElementById("streak-modal").classList.add("hidden");
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem("habit_token");
+      localStorage.removeItem("habit_user");
+      window.location.href = "index.html";
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+
+    // Boot
+    loadHabits();
+  </script>
+</body>
+</html>

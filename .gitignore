@@ -1,0 +1,16 @@
+# Environment
+backend/.env
+backend/.venv/
+backend/venv/
+
+# Logs
+backend/server.log
+backend/server_err.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Claude
+.claude/
