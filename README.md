@@ -136,6 +136,17 @@ python -m http.server 8080
 
 ---
 
+## Demo
+
+Try the app with this test account:
+
+| Field | Value |
+|-------|-------|
+| Email | `demo@habitflow.com` |
+| Password | `Demo1234!` |
+
+---
+
 ## Features
 
 - Email + password authentication via Supabase Auth
