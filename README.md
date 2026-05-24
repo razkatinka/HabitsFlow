@@ -142,8 +142,8 @@ Try the app with this test account:
 
 | Field | Value |
 |-------|-------|
-| Email | `demo@habitflow.com` |
-| Password | `Demo1234!` |
+| Email | `test@habitflow.com` |
+| Password | `Test1234!` |
 
 ---
 
