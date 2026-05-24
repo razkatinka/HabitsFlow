@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HabitFlow — History</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="dashboard-page">
+
+<div class="app-layout">
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <div class="app-sidebar-logo">🔥 HabitFlow</div>
+    <nav class="app-sidebar-nav">
+      <a href="dashboard.html" class="app-nav-item">📋 Habits</a>
+      <a href="history.html"   class="app-nav-item active">📊 History</a>
+      <a href="plan.html"      class="app-nav-item">🗺️ Plan</a>
+      <a href="bio-ages.html"  class="app-nav-item">🧬 Bio Ages</a>
+    </nav>
+    <div class="app-sidebar-footer">
+      <span id="sidebar-email" class="user-email"></span>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>
+    </div>
+  </aside>
+
+  <div class="app-main-wrap">
+
+    <!-- Mobile topbar -->
+    <header class="topbar">
+      <div class="topbar-inner">
+        <span class="topbar-logo">🔥 HabitFlow</span>
+        <div class="topbar-right">
+          <button class="btn btn-ghost" onclick="logout()">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+
+      <section class="section-heading">
+        <h2>📊 Daily History</h2>
+        <p class="subtext">All your logged days — click any row to edit</p>
+      </section>
+
+      <!-- Filters -->
+      <div class="hist-filters">
+        <label>
+          Show last
+          <select id="hist-days" onchange="loadHistory()">
+            <option value="14">14 days</option>
+            <option value="30" selected>30 days</option>
+            <option value="60">60 days</option>
+            <option value="90">90 days</option>
+          </select>
+        </label>
+        <span id="hist-count" class="hist-count"></span>
+      </div>
+
+      <div id="hist-loading" class="loading-msg">Loading history…</div>
+      <div id="hist-empty"   class="empty-msg hidden">
+        No history yet — start logging on the 🧬 Bio Ages page!
+      </div>
+
+      <!-- Scrollable table -->
+      <div id="hist-wrap" class="hist-table-wrap hidden">
+        <table class="hist-table">
+          <thead>
+            <tr>
+              <th class="hist-date-col">Date</th>
+              <th title="Sleep hours">😴</th>
+              <th title="Coffee cups">☕</th>
+              <th title="Exercise">🏃</th>
+              <th title="10k Steps">🚶</th>
+              <th title="Stretching">🤸</th>
+              <th title="Outdoor">🌿</th>
+              <th title="Reading">📚</th>
+              <th title="Meditation">🧘</th>
+              <th title="Learning">💡</th>
+              <th title="Screen before bed">📵</th>
+              <th title="Alcohol">🍺</th>
+              <th title="Smoking">🚬</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="hist-body"></tbody>
+        </table>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Edit modal -->
+<div id="edit-modal" class="modal-overlay hidden" onclick="closeEditModal(event)">
+  <div class="modal-box hist-edit-box">
+    <button class="modal-close" onclick="closeEditModal()">×</button>
+    <h3 id="edit-date-label" style="margin-bottom:20px;font-size:1rem;"></h3>
+
+    <!-- Sleep slider -->
+    <div class="hist-edit-field">
+      <div class="hist-edit-label-row">
+        <span>😴 Sleep last night</span>
+        <span id="edit-sleep-val" class="hist-edit-val">7h</span>
+      </div>
+      <input type="range" id="edit-sleep" min="0" max="12" step="0.5" value="7"
+        class="bio-slider"
+        oninput="document.getElementById('edit-sleep-val').textContent = this.value + 'h'" />
+    </div>
+
+    <!-- Coffee stepper -->
+    <div class="hist-edit-field">
+      <div class="hist-edit-label-row"><span>☕ Coffee cups</span></div>
+      <div class="hist-stepper">
+        <button onclick="stepEditCoffee(-1)" type="button">−</button>
+        <span id="edit-coffee-val">0</span>
+        <button onclick="stepEditCoffee(1)" type="button">+</button>
+      </div>
+    </div>
+
+    <!-- Toggles -->
+    <div class="hist-toggles">
+      <label class="hist-toggle-row"><span>🏃 Exercise</span><input type="checkbox" id="e-exercise" class="hist-toggle-cb" /></label>
+      <label class="hist-toggle-row"><span>🚶 10k Steps</span><input type="checkbox" id="e-steps" class="hist-toggle-cb" /></label>
+      <label class="hist-toggle-row"><span>🤸 Stretching</span><input type="checkbox" id="e-stretching" class="hist-toggle-cb" /></label>
+      <label class="hist-toggle-row"><span>🌿 Outdoor</span><input type="checkbox" id="e-outdoor" class="hist-toggle-cb" /></label>
+      <label class="hist-toggle-row"><span>📚 Reading</span><input type="checkbox" id="e-reading" class="hist-toggle-cb" /></label>
+      <label class="hist-toggle-row"><span>🧘 Meditation</span><input type="checkbox" id="e-meditation" class="hist-toggle-cb" /></label>
+      <label class="hist-toggle-row"><span>💡 Learning</span><input type="checkbox" id="e-learning" class="hist-toggle-cb" /></label>
+      <label class="hist-toggle-row"><span>📵 No Screen</span><input type="checkbox" id="e-screen" class="hist-toggle-cb" /></label>
+      <label class="hist-toggle-row"><span>🍺 Alcohol</span><input type="checkbox" id="e-alcohol" class="hist-toggle-cb" /></label>
+      <label class="hist-toggle-row"><span>🚬 Smoking</span><input type="checkbox" id="e-smoking" class="hist-toggle-cb" /></label>
+    </div>
+
+    <p id="edit-saved-msg" class="form-info hidden" style="text-align:center;margin-top:14px;">✅ Saved!</p>
+    <p id="edit-error"     class="form-error hidden" style="margin-top:8px;"></p>
+    <button class="btn btn-primary"
+      style="width:100%;justify-content:center;margin-top:16px;"
+      onclick="saveEdit()">Save Changes</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  if (!localStorage.getItem("habit_token")) window.location.href = "index.html";
+  const user = JSON.parse(localStorage.getItem("habit_user") || "{}");
+  const se = document.getElementById("sidebar-email");
+  if (se) se.textContent = user.email || "";
+
+  let _editDate   = null;
+  let _editCoffee = 0;
+  let _histData   = [];
+
+  function logout() {
+    localStorage.removeItem("habit_token");
+    localStorage.removeItem("habit_user");
+    window.location.href = "index.html";
+  }
+
+  async function loadHistory() {
+    const days = document.getElementById("hist-days").value;
+    document.getElementById("hist-loading").classList.remove("hidden");
+    document.getElementById("hist-wrap").classList.add("hidden");
+    document.getElementById("hist-empty").classList.add("hidden");
+    try {
+      const data = await apiFetch(`/daily-inputs/history?days=${days}`, "GET");
+      _histData = data;
+      renderTable(data);
+    } catch (err) {
+      if (err.status === 401) logout();
+      document.getElementById("hist-loading").textContent = "Failed to load history.";
+    }
+  }
+
+  function renderTable(rows) {
+    document.getElementById("hist-loading").classList.add("hidden");
+    if (!rows.length) {
+      document.getElementById("hist-empty").classList.remove("hidden");
+      return;
+    }
+    const sorted = [...rows].sort((a, b) => b.date.localeCompare(a.date));
+    document.getElementById("hist-count").textContent = sorted.length + " days logged";
+
+    const ok  = v => v ? "✅" : `<span style="opacity:.2">⬜</span>`;
+    const bad = v => v ? `<span style="opacity:.9">❌</span>` : `<span style="opacity:.2">⬜</span>`;
+
+    document.getElementById("hist-body").innerHTML = sorted.map(r => {
+      const d = new Date(r.date + "T00:00:00");
+      const label = d.toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" });
+      const isToday = r.date === new Date().toISOString().slice(0,10);
+      return `
+        <tr onclick="openEdit('${r.date}')" style="cursor:pointer${isToday ? ";font-weight:700" : ""}">
+          <td class="hist-date-col">
+            ${isToday ? "🟢 " : ""}${label}
+          </td>
+          <td>${r.sleep_hours}h</td>
+          <td>${r.coffee_cups}</td>
+          <td>${ok(r.exercise)}</td>
+          <td>${ok(r.steps_10k)}</td>
+          <td>${ok(r.stretching)}</td>
+          <td>${ok(r.outdoor)}</td>
+          <td>${ok(r.reading)}</td>
+          <td>${ok(r.meditation)}</td>
+          <td>${ok(r.learning)}</td>
+          <td>${bad(r.screen_before_bed)}</td>
+          <td>${bad(r.alcohol)}</td>
+          <td>${bad(r.smoking)}</td>
+          <td>
+            <button class="btn btn-ghost btn-sm"
+              onclick="event.stopPropagation(); openEdit('${r.date}')">✏️ Edit</button>
+          </td>
+        </tr>`;
+    }).join("");
+
+    document.getElementById("hist-wrap").classList.remove("hidden");
+  }
+
+  function openEdit(dateStr) {
+    _editDate = dateStr;
+    const row = _histData.find(r => r.date === dateStr) || {};
+    const d = new Date(dateStr + "T00:00:00");
+    document.getElementById("edit-date-label").textContent =
+      "✏️ " + d.toLocaleDateString("en-US", { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+
+    const sl = document.getElementById("edit-sleep");
+    sl.value = row.sleep_hours ?? 7;
+    document.getElementById("edit-sleep-val").textContent = sl.value + "h";
+
+    _editCoffee = row.coffee_cups ?? 0;
+    document.getElementById("edit-coffee-val").textContent = _editCoffee;
+
+    [
+      ["e-exercise","exercise"], ["e-steps","steps_10k"], ["e-stretching","stretching"],
+      ["e-outdoor","outdoor"],   ["e-reading","reading"],  ["e-meditation","meditation"],
+      ["e-learning","learning"], ["e-screen","screen_before_bed"],
+      ["e-alcohol","alcohol"],   ["e-smoking","smoking"],
+    ].forEach(([id, key]) => {
+      const el = document.getElementById(id);
+      if (el) el.checked = !!row[key];
+    });
+
+    document.getElementById("edit-error").classList.add("hidden");
+    document.getElementById("edit-saved-msg").classList.add("hidden");
+    document.getElementById("edit-modal").classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeEditModal(e) {
+    if (e && e.target !== document.getElementById("edit-modal") &&
+        !e.currentTarget.classList.contains("modal-close")) return;
+    document.getElementById("edit-modal").classList.add("hidden");
+    document.body.style.overflow = "";
+  }
+
+  function stepEditCoffee(d) {
+    _editCoffee = Math.max(0, Math.min(10, _editCoffee + d));
+    document.getElementById("edit-coffee-val").textContent = _editCoffee;
+  }
+
+  async function saveEdit() {
+    document.getElementById("edit-error").classList.add("hidden");
+    document.getElementById("edit-saved-msg").classList.add("hidden");
+    const payload = {
+      date:              _editDate,
+      sleep_hours:       parseFloat(document.getElementById("edit-sleep").value),
+      coffee_cups:       _editCoffee,
+      exercise:          document.getElementById("e-exercise").checked,
+      steps_10k:         document.getElementById("e-steps").checked,
+      stretching:        document.getElementById("e-stretching").checked,
+      outdoor:           document.getElementById("e-outdoor").checked,
+      reading:           document.getElementById("e-reading").checked,
+      meditation:        document.getElementById("e-meditation").checked,
+      learning:          document.getElementById("e-learning").checked,
+      screen_before_bed: document.getElementById("e-screen").checked,
+      alcohol:           document.getElementById("e-alcohol").checked,
+      smoking:           document.getElementById("e-smoking").checked,
+    };
+    try {
+      const saved = await apiFetch("/daily-inputs", "POST", payload);
+      const idx = _histData.findIndex(r => r.date === _editDate);
+      if (idx >= 0) _histData[idx] = saved; else _histData.push(saved);
+      renderTable(_histData);
+      document.getElementById("edit-saved-msg").classList.remove("hidden");
+      setTimeout(() => {
+        document.getElementById("edit-modal").classList.add("hidden");
+        document.body.style.overflow = "";
+      }, 900);
+    } catch (err) {
+      document.getElementById("edit-error").textContent = err.message || "Save failed";
+      document.getElementById("edit-error").classList.remove("hidden");
+    }
+  }
+
+  loadHistory();
+</script>
+</body>
+</html>

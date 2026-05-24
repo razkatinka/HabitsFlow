@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HabitFlow — My Plan</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bio-page">
+
+<div class="bio-layout">
+
+  <!-- Sidebar -->
+  <aside class="bio-sidebar">
+    <div class="bio-sidebar-logo">🔥 HabitFlow</div>
+    <nav class="bio-sidebar-nav">
+      <a href="dashboard.html" class="bio-nav-item"><span>📋</span> Habits</a>
+      <a href="history.html"   class="bio-nav-item"><span>📊</span> History</a>
+      <a href="plan.html"      class="bio-nav-item active"><span>🗺️</span> Plan</a>
+      <a href="bio-ages.html"  class="bio-nav-item"><span>🧬</span> Bio Ages</a>
+    </nav>
+    <div class="bio-sidebar-footer">
+      <div id="sidebar-user" class="bio-sidebar-email"></div>
+      <button onclick="logout()" class="bio-btn-ghost">Logout</button>
+    </div>
+  </aside>
+
+  <main class="bio-main">
+
+    <!-- ── Hero ───────────────────────────────────────────── -->
+    <section class="bio-hero">
+      <div class="bio-hero-text">
+        <p class="bio-hero-label">PERSONALIZED HABIT PLAN</p>
+        <div class="bio-hero-num">
+          <span id="hero-current-age" class="bio-hero-age">--</span>
+          <span class="bio-hero-unit">yrs</span>
+        </div>
+        <p id="hero-msg" class="bio-hero-msg">Loading your data…</p>
+        <div class="bio-hero-meta">
+          <span id="hero-real-badge" class="bio-hero-badge">Real age: --</span>
+          <span id="hero-diff-badge" class="bio-hero-badge hero-diff-neutral">-- yrs</span>
+        </div>
+      </div>
+      <div class="bio-hero-deco">🗺️</div>
+    </section>
+
+    <!-- ── Target input ────────────────────────────────────── -->
+    <section class="plan-target-card">
+      <div>
+        <p class="plan-target-label">Set Your Goal</p>
+        <p style="color:#a0aec0;font-size:.9rem;margin-top:4px;">
+          Enter the bio age you want to reach — I'll build you a custom plan.
+        </p>
+      </div>
+      <div class="plan-target-row">
+        <span style="color:#718096;font-size:.95rem;font-weight:600;">I want to reach bio age</span>
+        <input type="number" id="target-age" min="10" max="80" placeholder="25" />
+        <span style="color:#718096;font-size:.95rem;font-weight:600;">years</span>
+        <button class="bio-btn-primary" onclick="runPlan()">Calculate Plan ⚡</button>
+      </div>
+      <div id="plan-gap-row" class="plan-gap-row hidden"></div>
+    </section>
+
+    <!-- ── Summary cards ──────────────────────────────────── -->
+    <div id="plan-summary" class="plan-summary-grid hidden">
+      <div class="plan-summary-card">
+        <div class="plan-summary-val" id="sum-gap">--</div>
+        <div class="plan-summary-label">Years to Reduce</div>
+      </div>
+      <div class="plan-summary-card">
+        <div class="plan-summary-val" id="sum-months">--</div>
+        <div class="plan-summary-label">Est. Months</div>
+      </div>
+      <div class="plan-summary-card">
+        <div class="plan-summary-val" id="sum-minutes">--</div>
+        <div class="plan-summary-label">Min / Day</div>
+      </div>
+    </div>
+
+    <!-- ── No-data placeholder ────────────────────────────── -->
+    <div id="plan-placeholder" class="plan-no-data">
+      <div class="emoji">🎯</div>
+      <p style="font-size:1.05rem;color:#e2e8f0;font-weight:700;margin-bottom:8px;">
+        Enter your target bio age above
+      </p>
+      <p style="color:#718096;font-size:.9rem;">
+        I'll analyze your habits and build a week-by-week action plan.
+      </p>
+    </div>
+
+    <!-- ── Recommendations ────────────────────────────────── -->
+    <section id="plan-recs-section" class="hidden">
+      <div class="bio-section-header">
+        <h2>🏆 Recommended Actions</h2>
+        <span id="plan-reach-badge" class="bio-date-badge"></span>
+      </div>
+      <div id="plan-recs" class="plan-rec-list"></div>
+    </section>
+
+  </main>
+
+  <!-- Mobile nav -->
+  <nav class="bio-mobile-nav">
+    <a href="dashboard.html" class="bio-mobile-item">📋<span>Habits</span></a>
+    <a href="history.html"   class="bio-mobile-item">📊<span>History</span></a>
+    <a href="plan.html"      class="bio-mobile-item active">🗺️<span>Plan</span></a>
+    <a href="bio-ages.html"  class="bio-mobile-item">🧬<span>Bio Ages</span></a>
+  </nav>
+
+</div>
+
+<script src="app.js"></script>
+<script>
+// ── Guard ──────────────────────────────────────────────────
+if (!localStorage.getItem("habit_token")) window.location.href = "index.html";
+const user = JSON.parse(localStorage.getItem("habit_user") || "{}");
+const su = document.getElementById("sidebar-user");
+if (su) su.textContent = user.email || "";
+
+function logout() {
+  localStorage.removeItem("habit_token");
+  localStorage.removeItem("habit_user");
+  window.location.href = "index.html";
+}
+
+// ── Inline calc functions (from bio-age.js logic) ──────────
+function calcHeartAge(realAge, h) {
+  if (!h.length || !realAge) return realAge || 30;
+  let age = realAge;
+  const n   = h.length;
+  const ex  = h.filter(d => d.exercise).length;
+  const sl  = h.reduce((s, d) => s + (+d.sleep_hours || 7), 0) / n;
+  const smk = h.filter(d => d.smoking).length;
+  const alc = h.filter(d => d.alcohol).length;
+  const cof = h.reduce((s, d) => s + (+d.coffee_cups || 0), 0) / n;
+  if (ex >= 5)     age -= 2; else if (ex >= 3) age -= 1; else if (ex === 0) age += 1;
+  if (sl >= 7 && sl <= 9) age -= 1; else if (sl < 6) age += 2;
+  if (smk >= 5)    age += 5; else if (smk >= 3) age += 2; else if (smk >= 1) age += 1;
+  if (alc >= 5)    age += 2; else if (alc >= 3) age += 1;
+  if (cof > 0 && cof <= 2) age -= 0.5; else if (cof >= 5) age += 1;
+  return Math.max(+(age.toFixed(1)), 10);
+}
+function calcBrainAge(realAge, h) {
+  if (!h.length || !realAge) return realAge || 30;
+  let age = realAge;
+  const n    = h.length;
+  const sl   = h.reduce((s, d) => s + (+d.sleep_hours || 7), 0) / n;
+  const read = h.filter(d => d.reading).length;
+  const med  = h.filter(d => d.meditation).length;
+  const lrn  = h.filter(d => d.learning).length;
+  const scrn = h.filter(d => d.screen_before_bed).length;
+  if (sl >= 7 && sl <= 9) age -= 1; else if (sl < 6) age += 2;
+  if (read >= 5)  age -= 1.5; else if (read >= 3) age -= 0.5;
+  if (med  >= 5)  age -= 1;   else if (med  >= 3) age -= 0.5;
+  if (lrn  >= 3)  age -= 0.5;
+  if (scrn >= 5)  age += 2;   else if (scrn >= 3) age += 1;
+  return Math.max(+(age.toFixed(1)), 10);
+}
+function calcFitnessAge(realAge, h) {
+  if (!h.length || !realAge) return realAge || 30;
+  let age = realAge;
+  const ex  = h.filter(d => d.exercise).length;
+  const str = h.filter(d => d.stretching).length;
+  const stp = h.filter(d => d.steps_10k).length;
+  const out = h.filter(d => d.outdoor).length;
+  if (ex >= 5)   age -= 3;   else if (ex >= 3) age -= 1.5; else if (ex === 0) age += 2;
+  if (str >= 4)  age -= 1;   else if (str >= 2) age -= 0.5;
+  if (stp >= 5)  age -= 1;   else if (stp >= 3) age -= 0.5;
+  if (out >= 3)  age -= 0.5;
+  return Math.max(+(age.toFixed(1)), 10);
+}
+
+// ── Habit plan catalogue ───────────────────────────────────
+// Each entry defines max possible benefit at optimal frequency
+// getCurrentBenefit() returns the benefit user is currently getting
+const PLAN_HABITS = [
+  {
+    id: 'exercise', name: 'Exercise', emoji: '🏃',
+    desc: '30–45 min cardio or strength training',
+    freq: '5× / week', minutes: 45,
+    heartMax: 2, brainMax: 0, fitnessMax: 3,
+    weeks: 8,
+    getCurrentBenefit(h) {
+      const ex = h.filter(d => d.exercise).length;
+      return {
+        heart:   ex >= 5 ? 2 : ex >= 3 ? 1 : ex === 0 ? -1 : 0,
+        brain:   0,
+        fitness: ex >= 5 ? 3 : ex >= 3 ? 1.5 : ex === 0 ? -2 : 0,
+      };
+    },
+  },
+  {
+    id: 'sleep', name: 'Sleep 7–9 Hours', emoji: '😴',
+    desc: 'Consistent, quality sleep every night',
+    freq: 'Every night', minutes: 0,
+    heartMax: 1, brainMax: 1, fitnessMax: 0,
+    weeks: 3,
+    getCurrentBenefit(h) {
+      const sl = h.reduce((s, d) => s + (+d.sleep_hours || 7), 0) / (h.length || 1);
+      const good = (sl >= 7 && sl <= 9) ? 1 : 0;
+      const bad  = sl < 6 ? -2 : 0;
+      const v = good + bad;
+      return { heart: v, brain: v, fitness: 0 };
+    },
+  },
+  {
+    id: 'no_screen', name: 'No Screen Before Bed', emoji: '📵',
+    desc: 'Avoid phone/TV 1 hour before sleep — improves sleep quality & brain age',
+    freq: 'Every night', minutes: 0,
+    heartMax: 0, brainMax: 2, fitnessMax: 0,
+    weeks: 3,
+    isBad: true,
+    getCurrentBenefit(h) {
+      const s = h.filter(d => d.screen_before_bed).length;
+      return { heart: 0, brain: s >= 5 ? -2 : s >= 3 ? -1 : 0, fitness: 0 };
+    },
+  },
+  {
+    id: 'reading', name: 'Daily Reading', emoji: '📚',
+    desc: '20–30 min of books, articles, or learning content',
+    freq: '5× / week', minutes: 25,
+    heartMax: 0, brainMax: 1.5, fitnessMax: 0,
+    weeks: 6,
+    getCurrentBenefit(h) {
+      const r = h.filter(d => d.reading).length;
+      return { heart: 0, brain: r >= 5 ? 1.5 : r >= 3 ? 0.5 : 0, fitness: 0 };
+    },
+  },
+  {
+    id: 'steps_10k', name: 'Walk 10,000 Steps', emoji: '🚶',
+    desc: 'Daily walking — one of the most effective longevity habits',
+    freq: '5× / week', minutes: 80,
+    heartMax: 0, brainMax: 0, fitnessMax: 1,
+    weeks: 6,
+    getCurrentBenefit(h) {
+      const s = h.filter(d => d.steps_10k).length;
+      return { heart: 0, brain: 0, fitness: s >= 5 ? 1 : s >= 3 ? 0.5 : 0 };
+    },
+  },
+  {
+    id: 'meditation', name: 'Meditation', emoji: '🧘',
+    desc: '10–20 min mindfulness or breathing practice',
+    freq: '5× / week', minutes: 15,
+    heartMax: 0, brainMax: 1, fitnessMax: 0,
+    weeks: 8,
+    getCurrentBenefit(h) {
+      const m = h.filter(d => d.meditation).length;
+      return { heart: 0, brain: m >= 5 ? 1 : m >= 3 ? 0.5 : 0, fitness: 0 };
+    },
+  },
+  {
+    id: 'no_alcohol', name: 'Reduce / Eliminate Alcohol', emoji: '🍺',
+    desc: 'Cutting alcohol is one of the fastest ways to lower heart age',
+    freq: '0 days / week', minutes: 0,
+    heartMax: 2, brainMax: 0, fitnessMax: 0,
+    weeks: 4,
+    isBad: true,
+    getCurrentBenefit(h) {
+      const a = h.filter(d => d.alcohol).length;
+      return { heart: a >= 5 ? -2 : a >= 3 ? -1 : 0, brain: 0, fitness: 0 };
+    },
+  },
+  {
+    id: 'stretching', name: 'Stretching & Flexibility', emoji: '🤸',
+    desc: '15–20 min stretching, yoga, or mobility work',
+    freq: '4× / week', minutes: 20,
+    heartMax: 0, brainMax: 0, fitnessMax: 1,
+    weeks: 5,
+    getCurrentBenefit(h) {
+      const s = h.filter(d => d.stretching).length;
+      return { heart: 0, brain: 0, fitness: s >= 4 ? 1 : s >= 2 ? 0.5 : 0 };
+    },
+  },
+  {
+    id: 'learning', name: 'Learn Something New', emoji: '💡',
+    desc: 'Online course, skill practice, or educational content',
+    freq: '3× / week', minutes: 30,
+    heartMax: 0, brainMax: 0.5, fitnessMax: 0,
+    weeks: 5,
+    getCurrentBenefit(h) {
+      const l = h.filter(d => d.learning).length;
+      return { heart: 0, brain: l >= 3 ? 0.5 : 0, fitness: 0 };
+    },
+  },
+  {
+    id: 'outdoor', name: 'Outdoor Time', emoji: '🌿',
+    desc: 'Fresh air, nature, or outdoor exercise — improves mood & fitness',
+    freq: '3× / week', minutes: 30,
+    heartMax: 0, brainMax: 0, fitnessMax: 0.5,
+    weeks: 4,
+    getCurrentBenefit(h) {
+      const o = h.filter(d => d.outdoor).length;
+      return { heart: 0, brain: 0, fitness: o >= 3 ? 0.5 : 0 };
+    },
+  },
+  {
+    id: 'no_smoking', name: 'Quit Smoking', emoji: '🚭',
+    desc: 'Single highest-impact health change — reduces heart age by up to 5 years',
+    freq: '0 days / week', minutes: 0,
+    heartMax: 5, brainMax: 0, fitnessMax: 0,
+    weeks: 12,
+    isBad: true,
+    getCurrentBenefit(h) {
+      const s = h.filter(d => d.smoking).length;
+      return { heart: s >= 5 ? -5 : s >= 3 ? -2 : s >= 1 ? -1 : 0, brain: 0, fitness: 0 };
+    },
+  },
+  {
+    id: 'coffee', name: 'Moderate Coffee (1–2 cups)', emoji: '☕',
+    desc: 'Light coffee consumption has a small but proven heart-protective effect',
+    freq: '1–2 cups daily', minutes: 0,
+    heartMax: 0.5, brainMax: 0, fitnessMax: 0,
+    weeks: 2,
+    getCurrentBenefit(h) {
+      const avg = h.reduce((s, d) => s + (+d.coffee_cups || 0), 0) / (h.length || 1);
+      return { heart: (avg > 0 && avg <= 2) ? 0.5 : avg >= 5 ? -1 : 0, brain: 0, fitness: 0 };
+    },
+  },
+];
+
+// ── State ──────────────────────────────────────────────────
+const _state = { realAge: null, history7d: [], heartAge: null, brainAge: null, fitnessAge: null };
+
+// ── Boot ───────────────────────────────────────────────────
+async function boot() {
+  try {
+    const profile = await apiFetch("/profile", "GET");
+    if (!profile.real_age) {
+      document.getElementById("hero-msg").textContent = "Set your real age on the 🧬 Bio Ages page first!";
+      return;
+    }
+    _state.realAge = profile.real_age;
+
+    const hist = await apiFetch("/daily-inputs/history?days=7", "GET");
+    _state.history7d = hist;
+
+    _state.heartAge   = calcHeartAge(_state.realAge, hist);
+    _state.brainAge   = calcBrainAge(_state.realAge, hist);
+    _state.fitnessAge = calcFitnessAge(_state.realAge, hist);
+    const avg = +(((_state.heartAge + _state.brainAge + _state.fitnessAge) / 3).toFixed(1));
+
+    // Update hero
+    document.getElementById("hero-current-age").textContent = avg.toFixed(1);
+    document.getElementById("hero-real-badge").textContent  = "Real age: " + _state.realAge;
+    const diff = +(avg - _state.realAge).toFixed(1);
+    const diffBadge = document.getElementById("hero-diff-badge");
+    diffBadge.textContent  = (diff >= 0 ? "+" : "") + diff + " yrs";
+    diffBadge.className = "bio-hero-badge " + (diff < 0 ? "hero-diff-good" : "hero-diff-bad");
+
+    const msgs = {
+      good:    `You're already ${Math.abs(diff).toFixed(1)} years younger biologically 🔥`,
+      close:   "Your habits are working — let's push further! 💪",
+      behind:  `Set a goal to start reversing ${diff.toFixed(1)} years of bio age 🎯`,
+    };
+    document.getElementById("hero-msg").textContent =
+      diff <= -3 ? msgs.good : diff <= 0 ? msgs.close : msgs.behind;
+
+    // Pre-fill target with a reasonable goal
+    const suggested = Math.max(Math.round(avg) - 3, _state.realAge - 8);
+    document.getElementById("target-age").value = suggested;
+
+  } catch (err) {
+    if (err.status === 401) window.location.href = "index.html";
+  }
+}
+
+// ── Run Plan ───────────────────────────────────────────────
+function runPlan() {
+  const targetAge = parseInt(document.getElementById("target-age").value);
+  if (!targetAge || !_state.realAge) return;
+
+  const h       = _state.history7d;
+  const heartAge   = _state.heartAge   ?? _state.realAge;
+  const brainAge   = _state.brainAge   ?? _state.realAge;
+  const fitnessAge = _state.fitnessAge ?? _state.realAge;
+  const currentAvg = +((heartAge + brainAge + fitnessAge) / 3).toFixed(1);
+  const gap = +(currentAvg - targetAge).toFixed(1);
+
+  // Gap chips
+  const gapRow = document.getElementById("plan-gap-row");
+  gapRow.innerHTML = "";
+  gapRow.classList.remove("hidden");
+
+  const addChip = (text, cls) => {
+    const chip = document.createElement("span");
+    chip.className = "plan-gap-chip " + cls;
+    chip.textContent = text;
+    gapRow.appendChild(chip);
+  };
+
+  addChip(`Current avg: ${currentAvg} yrs`, "neutral");
+  addChip(`Target: ${targetAge} yrs`, "neutral");
+  if (gap <= 0) {
+    addChip("🎉 You've already hit your target!", "good");
+    document.getElementById("plan-placeholder").innerHTML =
+      `<div class="emoji">🎉</div><p style="color:#00C896;font-weight:700;font-size:1.1rem;">You're already at your goal!</p><p style="color:#718096">Your current bio age (${currentAvg}) ≤ target (${targetAge}). Try setting a more ambitious goal!</p>`;
+    document.getElementById("plan-placeholder").classList.remove("hidden");
+    document.getElementById("plan-recs-section").classList.add("hidden");
+    document.getElementById("plan-summary").classList.add("hidden");
+    return;
+  }
+  addChip(`Gap: ${gap} years to reduce`, "bad");
+
+  // Generate recommendations
+  const recs = [];
+  for (const habit of PLAN_HABITS) {
+    const current = habit.getCurrentBenefit(h);
+    let dH, dB, dF;
+    if (habit.isBad) {
+      dH = Math.max(0, -current.heart);
+      dB = Math.max(0, -current.brain);
+      dF = Math.max(0, -current.fitness);
+    } else {
+      dH = Math.max(0, habit.heartMax   - current.heart);
+      dB = Math.max(0, habit.brainMax   - current.brain);
+      dF = Math.max(0, habit.fitnessMax - current.fitness);
+    }
+    const total = +((dH + dB + dF) / 3).toFixed(2);
+    if (total > 0.01) {
+      recs.push({ ...habit, dH, dB, dF, total });
+    }
+  }
+  recs.sort((a, b) => b.total - a.total);
+
+  const totalPossible = recs.reduce((s, r) => s + r.total, 0);
+  const canReach = totalPossible >= gap;
+
+  // Pick the fewest habits to close the gap
+  let cumulative = 0;
+  let habitsNeeded = 0;
+  let totalMinutes = 0;
+  for (const rec of recs) {
+    cumulative += rec.total;
+    habitsNeeded++;
+    totalMinutes += rec.minutes * (rec.freq === "Every night" || rec.freq === "1–2 cups daily" ? 0 : 1);
+    if (cumulative >= gap) break;
+  }
+  // Estimated months: base 4 months per year of improvement, scaled by habits
+  const estimatedMonths = Math.max(1, Math.min(36, Math.round(gap * 3.5 + habitsNeeded * 0.5)));
+
+  // Weekly daily-average minutes
+  const avgMinPerDay = Math.round(
+    recs.slice(0, habitsNeeded).reduce((s, r) => {
+      const sessionsPerWeek = parseInt(r.freq) || (r.freq.includes("5") ? 5 : r.freq.includes("4") ? 4 : r.freq.includes("3") ? 3 : 0);
+      return s + (r.minutes * sessionsPerWeek) / 7;
+    }, 0)
+  );
+
+  // Summary cards
+  document.getElementById("sum-gap").textContent     = gap.toFixed(1);
+  document.getElementById("sum-months").textContent  = estimatedMonths;
+  document.getElementById("sum-minutes").textContent = avgMinPerDay || "<10";
+  document.getElementById("plan-summary").classList.remove("hidden");
+
+  // Reach badge
+  document.getElementById("plan-reach-badge").textContent =
+    canReach ? `✅ Reachable in ~${estimatedMonths} months` : "⚠️ Push beyond target with full commitment";
+
+  // Render rec cards
+  const maxImpact = recs[0]?.total || 1;
+  document.getElementById("plan-recs").innerHTML = recs.map((r, i) => {
+    const pClass = i === 0 ? "p1" : i === 1 ? "p2" : i === 2 ? "p3" : "";
+    const barPct = (v, max) => Math.round((v / max) * 100);
+    const heartPct   = barPct(r.dH, 5);
+    const brainPct   = barPct(r.dB, 2);
+    const fitnessPct = barPct(r.dF, 3);
+
+    const impactBars = [
+      r.dH   > 0 ? `<div class="plan-impact-line"><span style="min-width:56px">❤️ Heart</span><div class="plan-impact-bar-track"><div class="plan-impact-bar-fill bar-heart" style="width:${heartPct}%"></div></div><span style="color:#FF6B35;font-weight:700;min-width:40px">−${r.dH.toFixed(1)} yr</span></div>` : "",
+      r.dB   > 0 ? `<div class="plan-impact-line"><span style="min-width:56px">🧠 Brain</span><div class="plan-impact-bar-track"><div class="plan-impact-bar-fill bar-brain" style="width:${brainPct}%"></div></div><span style="color:#9B59B6;font-weight:700;min-width:40px">−${r.dB.toFixed(1)} yr</span></div>` : "",
+      r.dF   > 0 ? `<div class="plan-impact-line"><span style="min-width:56px">💪 Fit</span><div class="plan-impact-bar-track"><div class="plan-impact-bar-fill bar-fitness" style="width:${fitnessPct}%"></div></div><span style="color:#00C896;font-weight:700;min-width:40px">−${r.dF.toFixed(1)} yr</span></div>` : "",
+    ].filter(Boolean).join("");
+
+    const alreadyDone = i >= habitsNeeded;
+    return `
+      <div class="plan-rec-card" style="${alreadyDone ? "opacity:.45" : ""}">
+        <div class="plan-priority ${pClass}">${i + 1}</div>
+        <span class="plan-rec-emoji">${r.emoji}</span>
+        <div class="plan-rec-body">
+          <div class="plan-rec-name">${r.name}${alreadyDone ? " <span style='font-size:.7rem;color:#4a5568'>(bonus)</span>" : ""}</div>
+          <div class="plan-rec-desc">${r.desc}</div>
+          <div class="plan-rec-meta">
+            <span class="plan-meta-chip">🗓 ${r.freq}</span>
+            ${r.minutes > 0 ? `<span class="plan-meta-chip">⏱ ${r.minutes} min/session</span>` : ""}
+            <span class="plan-meta-chip">📈 Results in ~${r.weeks} weeks</span>
+          </div>
+          <div class="plan-impact-row">${impactBars}</div>
+          ${r.isBad ? `<p class="plan-rec-weeks" style="margin-top:6px">💡 This is a habit to <strong>eliminate</strong>, not add.</p>` : ""}
+        </div>
+      </div>`;
+  }).join("");
+
+  document.getElementById("plan-placeholder").classList.add("hidden");
+  document.getElementById("plan-recs-section").classList.remove("hidden");
+}
+
+boot();
+</script>
+</body>
+</html>

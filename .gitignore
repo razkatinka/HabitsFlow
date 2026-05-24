@@ -14,3 +14,6 @@ __pycache__/
 
 # Claude
 .claude/
+
+# Supabase CLI (נוצר אחרי `supabase link`, מכיל credentials)
+.supabase/

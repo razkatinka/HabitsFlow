@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HabitFlow — Biological Ages</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="bio-page">
+
+  <!-- Confetti canvas -->
+  <canvas id="confetti-canvas" style="position:fixed;inset:0;pointer-events:none;z-index:9999;width:100%;height:100%;"></canvas>
+
+  <!-- Toast -->
+  <div id="bio-toast" class="bio-toast hidden"></div>
+
+  <!-- Onboarding modal -->
+  <div id="onboarding-modal" class="bio-overlay hidden">
+    <div class="bio-modal">
+      <div class="bio-modal-emoji">🧬</div>
+      <h2>Welcome to Bio Ages</h2>
+      <p class="bio-modal-sub">Enter your real age so we can calculate your biological age scores.</p>
+      <form onsubmit="saveProfile(event)" class="bio-modal-form">
+        <div class="bio-field">
+          <label>Your Real Age</label>
+          <input type="number" id="ob-age" min="10" max="120" placeholder="e.g. 28" required />
+        </div>
+        <div class="bio-field">
+          <label>Gender <span class="optional">(optional)</span></label>
+          <select id="ob-gender">
+            <option value="">Prefer not to say</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <button type="submit" class="bio-btn-primary full-width">Let's Go 🚀</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="bio-layout">
+
+    <!-- Sidebar (desktop) -->
+    <aside class="bio-sidebar">
+      <div class="bio-sidebar-logo">🔥 HabitFlow</div>
+      <nav class="bio-sidebar-nav">
+        <a href="dashboard.html" class="bio-nav-item"><span>📋</span> Habits</a>
+        <a href="history.html"   class="bio-nav-item"><span>📊</span> History</a>
+        <a href="plan.html"      class="bio-nav-item"><span>🗺️</span> Plan</a>
+        <a href="bio-ages.html"  class="bio-nav-item active"><span>🧬</span> Bio Ages</a>
+      </nav>
+      <div class="bio-sidebar-footer">
+        <div id="sidebar-user" class="bio-sidebar-email"></div>
+        <button onclick="logout()" class="bio-btn-ghost">Logout</button>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="bio-main">
+
+      <!-- ── Hero ────────────────────────────────────────── -->
+      <section class="bio-hero">
+        <div class="bio-hero-text">
+          <p class="bio-hero-label">YOUR AVERAGE BIOLOGICAL AGE</p>
+          <div class="bio-hero-num">
+            <span id="avg-bio-age" class="bio-hero-age">--</span>
+            <span class="bio-hero-unit">yrs</span>
+          </div>
+          <p id="hero-message" class="bio-hero-msg">Loading your scores…</p>
+          <div class="bio-hero-meta">
+            <span id="real-age-display" class="bio-hero-badge">Real age: --</span>
+            <span id="hero-diff" class="bio-hero-badge hero-diff-neutral">-- yrs</span>
+          </div>
+        </div>
+        <div class="bio-hero-deco">🧬</div>
+      </section>
+
+      <!-- ── Age Cards ────────────────────────────────────── -->
+      <section class="bio-cards-grid">
+
+        <!-- Heart -->
+        <div class="bio-flip-card" id="heart-flip">
+          <div class="bio-flip-inner">
+            <div class="bio-card-front" style="--card-color:#FF6B35">
+              <div class="bio-card-top">
+                <span class="bio-card-icon">❤️</span>
+                <div>
+                  <div class="bio-card-title">Heart Age</div>
+                  <div id="heart-trend" class="bio-trend-wrap"></div>
+                </div>
+              </div>
+              <div class="bio-card-age-row">
+                <span id="heart-age-val" class="bio-card-age">--</span>
+                <span class="bio-card-age-unit">yrs</span>
+              </div>
+              <div id="heart-diff" class="bio-card-diff">vs real age</div>
+              <div id="heart-tip" class="bio-card-tip"></div>
+              <div class="bio-card-hint">Hover to see breakdown →</div>
+            </div>
+            <div class="bio-card-back" style="--card-color:#FF6B35">
+              <h4>❤️ What's affecting your heart age?</h4>
+              <ul id="heart-factors" class="bio-factors"></ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Brain -->
+        <div class="bio-flip-card" id="brain-flip">
+          <div class="bio-flip-inner">
+            <div class="bio-card-front" style="--card-color:#9B59B6">
+              <div class="bio-card-top">
+                <span class="bio-card-icon">🧠</span>
+                <div>
+                  <div class="bio-card-title">Brain Age</div>
+                  <div id="brain-trend" class="bio-trend-wrap"></div>
+                </div>
+              </div>
+              <div class="bio-card-age-row">
+                <span id="brain-age-val" class="bio-card-age">--</span>
+                <span class="bio-card-age-unit">yrs</span>
+              </div>
+              <div id="brain-diff" class="bio-card-diff">vs real age</div>
+              <div id="brain-tip" class="bio-card-tip"></div>
+              <div class="bio-card-hint">Hover to see breakdown →</div>
+            </div>
+            <div class="bio-card-back" style="--card-color:#9B59B6">
+              <h4>🧠 What's affecting your brain age?</h4>
+              <ul id="brain-factors" class="bio-factors"></ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fitness -->
+        <div class="bio-flip-card" id="fitness-flip">
+          <div class="bio-flip-inner">
+            <div class="bio-card-front" style="--card-color:#00C896">
+              <div class="bio-card-top">
+                <span class="bio-card-icon">💪</span>
+                <div>
+                  <div class="bio-card-title">Fitness Age</div>
+                  <div id="fitness-trend" class="bio-trend-wrap"></div>
+                </div>
+              </div>
+              <div class="bio-card-age-row">
+                <span id="fitness-age-val" class="bio-card-age">--</span>
+                <span class="bio-card-age-unit">yrs</span>
+              </div>
+              <div id="fitness-diff" class="bio-card-diff">vs real age</div>
+              <div id="fitness-tip" class="bio-card-tip"></div>
+              <div class="bio-card-hint">Hover to see breakdown →</div>
+            </div>
+            <div class="bio-card-back" style="--card-color:#00C896">
+              <h4>💪 What's affecting your fitness age?</h4>
+              <ul id="fitness-factors" class="bio-factors"></ul>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ── Daily Log ─────────────────────────────────────── -->
+      <section class="bio-log-section">
+        <div class="bio-section-header">
+          <h2>📅 Today's Log</h2>
+          <span id="today-date-label" class="bio-date-badge"></span>
+        </div>
+
+        <div class="bio-log-grid">
+
+          <!-- Sleep slider -->
+          <div class="bio-input-card span-2">
+            <div class="bio-input-label-row">
+              <span>😴 Sleep last night</span>
+              <span id="sleep-val" class="bio-input-val">7h</span>
+            </div>
+            <input type="range" id="sleep-slider" min="0" max="12" step="0.5" value="7"
+              class="bio-slider"
+              oninput="updateSleepLabel(this.value)" />
+            <div class="bio-slider-ends"><span>0h</span><span>6h</span><span>12h</span></div>
+          </div>
+
+          <!-- Coffee stepper -->
+          <div class="bio-input-card">
+            <div class="bio-input-label-row"><span>☕ Coffee cups</span></div>
+            <div class="bio-stepper">
+              <button class="bio-stepper-btn" onclick="stepCoffee(-1)" type="button">−</button>
+              <span id="coffee-val" class="bio-stepper-num">0</span>
+              <button class="bio-stepper-btn" onclick="stepCoffee(1)" type="button">+</button>
+            </div>
+          </div>
+
+          <!-- Empty spacer on desktop, hidden on mobile -->
+          <div class="bio-input-card bio-spacer-card" aria-hidden="true"></div>
+
+        </div>
+
+        <!-- Toggles grid -->
+        <div class="bio-toggles-grid">
+
+          <div class="bio-toggle-item">
+            <span class="btog-icon">🏃</span>
+            <span class="btog-label">Exercise</span>
+            <label class="bio-switch"><input type="checkbox" id="t-exercise"><span class="bio-switch-track"></span></label>
+          </div>
+
+          <div class="bio-toggle-item">
+            <span class="btog-icon">🚶</span>
+            <span class="btog-label">10k Steps</span>
+            <label class="bio-switch"><input type="checkbox" id="t-steps"><span class="bio-switch-track"></span></label>
+          </div>
+
+          <div class="bio-toggle-item">
+            <span class="btog-icon">🌿</span>
+            <span class="btog-label">Outdoor</span>
+            <label class="bio-switch"><input type="checkbox" id="t-outdoor"><span class="bio-switch-track"></span></label>
+          </div>
+
+          <div class="bio-toggle-item">
+            <span class="btog-icon">🤸</span>
+            <span class="btog-label">Stretching</span>
+            <label class="bio-switch"><input type="checkbox" id="t-stretching"><span class="bio-switch-track"></span></label>
+          </div>
+
+          <div class="bio-toggle-item">
+            <span class="btog-icon">📚</span>
+            <span class="btog-label">Reading</span>
+            <label class="bio-switch"><input type="checkbox" id="t-reading"><span class="bio-switch-track"></span></label>
+          </div>
+
+          <div class="bio-toggle-item">
+            <span class="btog-icon">🧘</span>
+            <span class="btog-label">Meditation</span>
+            <label class="bio-switch"><input type="checkbox" id="t-meditation"><span class="bio-switch-track"></span></label>
+          </div>
+
+          <div class="bio-toggle-item">
+            <span class="btog-icon">💡</span>
+            <span class="btog-label">Learning</span>
+            <label class="bio-switch"><input type="checkbox" id="t-learning"><span class="bio-switch-track"></span></label>
+          </div>
+
+          <div class="bio-toggle-item">
+            <span class="btog-icon">📱</span>
+            <span class="btog-label">Screen before bed</span>
+            <label class="bio-switch"><input type="checkbox" id="t-screen"><span class="bio-switch-track"></span></label>
+          </div>
+
+          <div class="bio-toggle-item">
+            <span class="btog-icon">🍺</span>
+            <span class="btog-label">Alcohol</span>
+            <label class="bio-switch"><input type="checkbox" id="t-alcohol"><span class="bio-switch-track"></span></label>
+          </div>
+
+          <div class="bio-toggle-item">
+            <span class="btog-icon">🚬</span>
+            <span class="btog-label">Smoking</span>
+            <label class="bio-switch"><input type="checkbox" id="t-smoking"><span class="bio-switch-track"></span></label>
+          </div>
+
+        </div>
+
+        <button id="save-btn" class="bio-save-btn" onclick="saveAndRecalculate()" type="button">
+          ⚡ Save &amp; Recalculate
+        </button>
+      </section>
+
+      <!-- ── 30-day chart ───────────────────────────────────── -->
+      <section class="bio-chart-section">
+        <div class="bio-section-header">
+          <h2>📈 30-Day Trend</h2>
+        </div>
+        <div class="bio-chart-wrap">
+          <canvas id="bio-chart"></canvas>
+          <p id="chart-no-data" class="bio-chart-empty hidden">
+            Not enough data yet — keep logging daily! 📊
+          </p>
+        </div>
+      </section>
+
+      <!-- ── Today's Impact ────────────────────────────────── -->
+      <section class="bio-impact-section">
+        <div class="bio-section-header">
+          <h2>💡 Today's Impact</h2>
+        </div>
+        <div id="impact-list" class="bio-impact-grid"></div>
+      </section>
+
+    </main>
+
+    <!-- Mobile bottom nav -->
+    <nav class="bio-mobile-nav">
+      <a href="dashboard.html" class="bio-mobile-item">📋<span>Habits</span></a>
+      <a href="history.html"   class="bio-mobile-item">📊<span>History</span></a>
+      <a href="plan.html"      class="bio-mobile-item">🗺️<span>Plan</span></a>
+      <a href="bio-ages.html"  class="bio-mobile-item active">🧬<span>Bio Ages</span></a>
+    </nav>
+
+  </div><!-- .bio-layout -->
+
+  <script src="app.js"></script>
+  <script src="bio-age.js"></script>
+</body>
+</html>

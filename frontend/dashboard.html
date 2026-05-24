@@ -8,7 +8,26 @@
 </head>
 <body class="dashboard-page">
 
-  <!-- Top nav -->
+<div class="app-layout">
+
+  <!-- Sidebar (desktop) -->
+  <aside class="app-sidebar">
+    <div class="app-sidebar-logo">🔥 HabitFlow</div>
+    <nav class="app-sidebar-nav">
+      <a href="dashboard.html" class="app-nav-item active">📋 Habits</a>
+      <a href="history.html"   class="app-nav-item">📊 History</a>
+      <a href="plan.html"      class="app-nav-item">🗺️ Plan</a>
+      <a href="bio-ages.html"  class="app-nav-item">🧬 Bio Ages</a>
+    </nav>
+    <div class="app-sidebar-footer">
+      <span id="sidebar-email" class="user-email"></span>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>
+    </div>
+  </aside>
+
+  <div class="app-main-wrap">
+
+  <!-- Top nav (mobile only) -->
   <header class="topbar">
     <div class="topbar-inner">
       <span class="topbar-logo">🔥 HabitFlow</span>
@@ -35,209 +54,590 @@
       <p id="progress-label" class="progress-label">0 / 0 done</p>
     </section>
 
-    <!-- Add habit form -->
+    <!-- Add habit button -->
     <section class="add-habit-section">
-      <form id="add-habit-form" onsubmit="handleAddHabit(event)">
-        <div class="add-habit-row">
-          <input
-            type="text"
-            id="new-habit-name"
-            placeholder="New habit (e.g. Drink water)"
-            maxlength="80"
-            required
-          />
-          <button type="submit" class="btn btn-primary" id="btn-add">+ Add</button>
-        </div>
-        <p id="add-error" class="form-error hidden"></p>
-      </form>
+      <button class="new-habit-btn" onclick="openHabitModal()">
+        ✚ Add a Habit
+      </button>
+      <p id="add-error" class="form-error hidden"></p>
     </section>
 
     <!-- Habits list -->
     <section class="habits-section">
       <div id="habits-loading" class="loading-msg">Loading habits…</div>
       <div id="habits-empty" class="empty-msg hidden">
-        No habits yet. Add your first one above!
+        No habits yet. Click <strong>Add a Habit</strong> to get started!
       </div>
       <ul id="habits-list" class="habits-list hidden"></ul>
     </section>
 
   </main>
 
-  <!-- Streak modal -->
-  <div id="streak-modal" class="modal-overlay hidden" onclick="closeStreakModal(event)">
-    <div class="modal-box">
-      <button class="modal-close" onclick="closeStreakModal()">×</button>
-      <div class="modal-icon">🔥</div>
-      <h3 id="modal-habit-name"></h3>
-      <p class="modal-streak-label">Current streak</p>
-      <p id="modal-streak-count" class="modal-streak-count"></p>
-      <p id="modal-streak-sub" class="modal-streak-sub"></p>
+  </div><!-- .app-main-wrap -->
+</div><!-- .app-layout -->
+
+<!-- ══════════════════════════════════════════════════════
+     Habit Picker Modal
+═══════════════════════════════════════════════════════ -->
+<div id="habit-modal" class="modal-overlay hidden" onclick="closeHabitModal(event)">
+  <div class="modal-box habit-modal-box">
+
+    <div class="hm-header">
+      <h3>Add a Habit</h3>
+      <button class="modal-close" onclick="closeHabitModal()">×</button>
     </div>
+
+    <!-- Category tabs -->
+    <div class="hm-tabs" id="hm-tabs">
+      <button class="hm-tab active" data-tab="heart"   onclick="switchTab(this)">❤️ Heart</button>
+      <button class="hm-tab"        data-tab="brain"   onclick="switchTab(this)">🧠 Brain</button>
+      <button class="hm-tab"        data-tab="fitness" onclick="switchTab(this)">💪 Fitness</button>
+      <button class="hm-tab"        data-tab="food"    onclick="switchTab(this)">🍽️ Food</button>
+      <button class="hm-tab"        data-tab="life"    onclick="switchTab(this)">✨ Life</button>
+      <button class="hm-tab"        data-tab="custom"  onclick="switchTab(this)">✏️ Custom</button>
+    </div>
+
+    <!-- Heart panel -->
+    <div class="hm-panel" id="panel-heart"></div>
+
+    <!-- Brain panel -->
+    <div class="hm-panel hidden" id="panel-brain"></div>
+
+    <!-- Fitness panel -->
+    <div class="hm-panel hidden" id="panel-fitness"></div>
+
+    <!-- Food panel -->
+    <div class="hm-panel hidden" id="panel-food"></div>
+
+    <!-- Life panel -->
+    <div class="hm-panel hidden" id="panel-life"></div>
+
+    <!-- Custom panel -->
+    <div class="hm-panel hidden" id="panel-custom">
+      <form onsubmit="addCustomHabit(event)" class="hm-custom-form">
+        <div class="hm-custom-row">
+          <input type="text" id="custom-emoji" placeholder="😊" maxlength="2" class="hm-emoji-input" />
+          <input type="text" id="custom-name" placeholder="Name your habit…" maxlength="80" required class="hm-name-input" />
+        </div>
+        <div class="hm-custom-bio">
+          <label>Link to Bio Age <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
+          <select id="custom-bio-field">
+            <option value="">No link</option>
+            <option value="exercise">❤️💪 Exercise</option>
+            <option value="steps_10k">💪 10k Steps</option>
+            <option value="stretching">💪 Stretching</option>
+            <option value="outdoor">💪 Outdoor Activity</option>
+            <option value="reading">🧠 Reading</option>
+            <option value="meditation">🧠 Meditation</option>
+            <option value="learning">🧠 Learning</option>
+            <option value="alcohol">❤️ No Alcohol (inverse)</option>
+            <option value="smoking">❤️ No Smoking (inverse)</option>
+            <option value="screen_before_bed">🧠 No Screen Before Bed (inverse)</option>
+          </select>
+        </div>
+        <p id="hm-error" class="form-error hidden"></p>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">+ Add Habit</button>
+      </form>
+    </div>
+
   </div>
+</div>
 
-  <script src="app.js"></script>
-  <script>
-    // Guard: redirect to login if not authenticated
-    const token = localStorage.getItem("habit_token");
-    if (!token) window.location.href = "index.html";
+<!-- ══════════════════════════════════════════════════════
+     Streak Modal
+═══════════════════════════════════════════════════════ -->
+<div id="streak-modal" class="modal-overlay hidden" onclick="closeStreakModal(event)">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeStreakModal()">×</button>
+    <div class="modal-icon">🔥</div>
+    <h3 id="modal-habit-name"></h3>
+    <p class="modal-streak-label">Current streak</p>
+    <p id="modal-streak-count" class="modal-streak-count"></p>
+    <p id="modal-streak-sub" class="modal-streak-sub"></p>
+  </div>
+</div>
 
-    const user = JSON.parse(localStorage.getItem("habit_user") || "{}");
-    document.getElementById("user-email").textContent = user.email || "";
+<!-- ══════════════════════════════════════════════════════
+     Stats Modal
+═══════════════════════════════════════════════════════ -->
+<div id="stats-modal" class="modal-overlay hidden" onclick="closeStatsModal(event)">
+  <div class="modal-box stats-modal-box">
+    <button class="modal-close" onclick="closeStatsModal()">×</button>
+    <div id="stats-modal-emoji" class="modal-icon"></div>
+    <h3 id="stats-modal-name"></h3>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-val" id="stat-streak">--</div>
+        <div class="stat-label">🔥 Streak</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val" id="stat-total">--</div>
+        <div class="stat-label">✅ Done (30d)</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val" id="stat-time">--</div>
+        <div class="stat-label">⏱ Minutes</div>
+      </div>
+    </div>
+    <p class="stat-calendar-label">Last 14 days</p>
+    <div id="stat-calendar" class="stat-calendar"></div>
+  </div>
+</div>
 
-    // Set today's date
-    const today = new Date();
-    document.getElementById("today-label").textContent = today.toLocaleDateString("en-US", { weekday: "long" });
-    document.getElementById("today-date").textContent = today.toLocaleDateString("en-US", {
-      year: "numeric", month: "long", day: "numeric",
+<script src="app.js"></script>
+<script>
+  // ── Boot guard ──────────────────────────────────────────
+  const token = localStorage.getItem("habit_token");
+  if (!token) window.location.href = "index.html";
+
+  const user = JSON.parse(localStorage.getItem("habit_user") || "{}");
+  document.getElementById("user-email").textContent  = user.email || "";
+  const sidebarEmail = document.getElementById("sidebar-email");
+  if (sidebarEmail) sidebarEmail.textContent = user.email || "";
+
+  // Date display
+  const today = new Date();
+  document.getElementById("today-label").textContent = today.toLocaleDateString("en-US", { weekday: "long" });
+  document.getElementById("today-date").textContent  = today.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+  // ── Suggestion catalogue ────────────────────────────────
+  const INVERSE_FIELDS = new Set(["alcohol", "smoking", "screen_before_bed"]);
+
+  const SUGGESTIONS = {
+    heart: [
+      // ── Good habits ──
+      { emoji: "🏃", name: "Exercise",                bio_age_field: "exercise", tag: "❤️ Heart" },
+      { emoji: "🍺", name: "No Alcohol Today",        bio_age_field: "alcohol",  tag: "❤️ Heart" },
+      { emoji: "🚭", name: "No Smoking Today",        bio_age_field: "smoking",  tag: "❤️ Heart" },
+      { emoji: "😴", name: "Sleep 8 Hours",           bio_age_field: null,       tag: null },
+      { emoji: "💧", name: "Drink Enough Water",      bio_age_field: null,       tag: null },
+      { emoji: "🧘", name: "Yoga",                    bio_age_field: "exercise", tag: "❤️ Heart" },
+      { emoji: "⏰", name: "Intermittent Fasting",    bio_age_field: null,       tag: null },
+      { emoji: "🫀", name: "Heart Rate Zone Training",bio_age_field: "exercise", tag: "❤️ Heart" },
+      { emoji: "🏊", name: "Swimming",                bio_age_field: "exercise", tag: "❤️ Heart" },
+      // ── Bad habits (track occurrences) ──
+      { emoji: "🚬", name: "Smoked Today",            bio_age_field: "smoking",  tag: null, bio_age_inverse: false, isBad: true },
+      { emoji: "🍺", name: "Drank Alcohol Today",     bio_age_field: "alcohol",  tag: null, bio_age_inverse: false, isBad: true },
+      { emoji: "😤", name: "Extreme Stress Day",      bio_age_field: null,       tag: null, isBad: true },
+      { emoji: "🌙", name: "Stayed Up Past 2AM",      bio_age_field: null,       tag: null, isBad: true },
+      { emoji: "🛋️", name: "Completely Sedentary Day",bio_age_field: null,       tag: null, isBad: true },
+      { emoji: "🍔", name: "Ate Junk Food",           bio_age_field: null,       tag: null, isBad: true },
+    ],
+    brain: [
+      // ── Good habits ──
+      { emoji: "📚", name: "Reading",                  bio_age_field: "reading",           tag: "🧠 Brain" },
+      { emoji: "🧘", name: "Meditation",               bio_age_field: "meditation",        tag: "🧠 Brain" },
+      { emoji: "💡", name: "Learn Something New",      bio_age_field: "learning",          tag: "🧠 Brain" },
+      { emoji: "📵", name: "No Screen Before Bed",     bio_age_field: "screen_before_bed", tag: "🧠 Brain" },
+      { emoji: "📝", name: "Journal",                  bio_age_field: null,                tag: null },
+      { emoji: "🎧", name: "Educational Podcast",      bio_age_field: "learning",          tag: "🧠 Brain" },
+      { emoji: "🧩", name: "Brain Training / Puzzles", bio_age_field: "learning",          tag: "🧠 Brain" },
+      { emoji: "🗣️", name: "Learn a Language",         bio_age_field: "learning",          tag: "🧠 Brain" },
+      { emoji: "🎵", name: "Practice an Instrument",   bio_age_field: "learning",          tag: "🧠 Brain" },
+      { emoji: "📵", name: "Social Media Detox Day",   bio_age_field: "screen_before_bed", tag: "🧠 Brain" },
+      { emoji: "✍️", name: "Creative Writing",          bio_age_field: "learning",          tag: "🧠 Brain" },
+      // ── Bad habits ──
+      { emoji: "📱", name: "Doom Scrolled 2+ Hours",   bio_age_field: "screen_before_bed", tag: null, bio_age_inverse: false, isBad: true },
+      { emoji: "🎮", name: "Gamed 3+ Hours",            bio_age_field: "screen_before_bed", tag: null, bio_age_inverse: false, isBad: true },
+      { emoji: "📺", name: "Screen Before Bed Tonight", bio_age_field: "screen_before_bed", tag: null, bio_age_inverse: false, isBad: true },
+      { emoji: "😴", name: "Slept Under 5 Hours",       bio_age_field: null, tag: null, isBad: true },
+      { emoji: "🤯", name: "Brain Fog / Burnout Day",   bio_age_field: null, tag: null, isBad: true },
+      { emoji: "🍺", name: "Drank Alcohol Today",       bio_age_field: "alcohol", tag: null, bio_age_inverse: false, isBad: true },
+    ],
+    fitness: [
+      // ── Good habits ──
+      { emoji: "🚶", name: "Walk 10k Steps",        bio_age_field: "steps_10k",  tag: "💪 Fitness" },
+      { emoji: "🤸", name: "Stretching",             bio_age_field: "stretching", tag: "💪 Fitness" },
+      { emoji: "🌿", name: "Outdoor Activity",       bio_age_field: "outdoor",    tag: "💪 Fitness" },
+      { emoji: "🏋️", name: "Strength Training",      bio_age_field: "exercise",   tag: "💪 Fitness" },
+      { emoji: "🚴", name: "Cycling",                bio_age_field: "exercise",   tag: "💪 Fitness" },
+      { emoji: "🏊", name: "Swimming",               bio_age_field: "exercise",   tag: "💪 Fitness" },
+      { emoji: "⚡", name: "HIIT Workout",           bio_age_field: "exercise",   tag: "💪 Fitness" },
+      { emoji: "🥾", name: "Hiking",                 bio_age_field: "outdoor",    tag: "💪 Fitness" },
+      { emoji: "🪢", name: "Jump Rope",              bio_age_field: "exercise",   tag: "💪 Fitness" },
+      { emoji: "🧘", name: "Yoga / Pilates",         bio_age_field: "stretching", tag: "💪 Fitness" },
+      { emoji: "🏃", name: "Morning Run",            bio_age_field: "exercise",   tag: "💪 Fitness" },
+      { emoji: "⛹️", name: "Team Sport / Court Game",bio_age_field: "exercise",   tag: "💪 Fitness" },
+      // ── Bad habits ──
+      { emoji: "🛋️", name: "Sat All Day (No Movement)", bio_age_field: null, tag: null, isBad: true },
+      { emoji: "🚗", name: "Skipped Steps — Used Car for Everything", bio_age_field: null, tag: null, isBad: true },
+      { emoji: "😬", name: "Skipped Planned Workout",    bio_age_field: null, tag: null, isBad: true },
+      { emoji: "🍟", name: "Ate Post-Workout Junk Food", bio_age_field: null, tag: null, isBad: true },
+      { emoji: "🛗", name: "Avoided Stairs All Day",     bio_age_field: null, tag: null, isBad: true },
+    ],
+    food: [
+      // ── Good habits ──
+      { emoji: "🥦", name: "Eat Vegetables",               bio_age_field: null, tag: null },
+      { emoji: "🍳", name: "Cook at Home",                 bio_age_field: null, tag: null },
+      { emoji: "🥗", name: "Eat a Healthy Meal",           bio_age_field: null, tag: null },
+      { emoji: "💧", name: "Drink 8 Glasses of Water",     bio_age_field: null, tag: null },
+      { emoji: "🍵", name: "Drink Green Tea",              bio_age_field: null, tag: null },
+      { emoji: "☕", name: "Limit Coffee (≤2 cups)",       bio_age_field: null, tag: null },
+      { emoji: "🥑", name: "Eat Healthy Fats",             bio_age_field: null, tag: null },
+      { emoji: "🫐", name: "Eat Berries / Antioxidants",   bio_age_field: null, tag: null },
+      { emoji: "🥜", name: "Eat Nuts & Seeds",             bio_age_field: null, tag: null },
+      { emoji: "🥩", name: "High Protein Meal",            bio_age_field: null, tag: null },
+      { emoji: "🍎", name: "Eat 3 Fruits Today",           bio_age_field: null, tag: null },
+      { emoji: "⏰", name: "Intermittent Fasting",         bio_age_field: null, tag: null },
+      { emoji: "🧂", name: "Low Sodium Day",               bio_age_field: null, tag: null },
+      { emoji: "🫙", name: "Meal Prep for the Week",       bio_age_field: null, tag: null },
+      { emoji: "🍫", name: "Dark Chocolate (1 piece only)",bio_age_field: null, tag: null },
+      { emoji: "🫖", name: "Herbal Tea Before Bed",        bio_age_field: null, tag: null },
+      // ── Bad habits ──
+      { emoji: "🍔", name: "Ate Fast Food",                bio_age_field: null, tag: null, isBad: true },
+      { emoji: "🥤", name: "Drank Soda / Energy Drink",    bio_age_field: null, tag: null, isBad: true },
+      { emoji: "🍰", name: "Binge Ate Sugary Snacks",      bio_age_field: null, tag: null, isBad: true },
+      { emoji: "🌙", name: "Late Night Eating (after 10pm)",bio_age_field: null, tag: null, isBad: true },
+      { emoji: "🍟", name: "Ate Fried / Processed Food",   bio_age_field: null, tag: null, isBad: true },
+      { emoji: "🍺", name: "Drank Alcohol Today",          bio_age_field: "alcohol", tag: null, bio_age_inverse: false, isBad: true },
+      { emoji: "🧁", name: "Ate Processed Sweets",         bio_age_field: null, tag: null, isBad: true },
+      { emoji: "🛒", name: "Ordered Unhealthy Takeout",    bio_age_field: null, tag: null, isBad: true },
+      { emoji: "🍕", name: "Skipped Vegetables Today",     bio_age_field: null, tag: null, isBad: true },
+    ],
+    life: [
+      // ── Good habits ──
+      { emoji: "🚿", name: "Cold Shower",                   bio_age_field: null, tag: null },
+      { emoji: "☀️", name: "Morning Sunlight (10 min)",     bio_age_field: null, tag: null },
+      { emoji: "📵", name: "No Phone First Hour of Day",    bio_age_field: null, tag: null },
+      { emoji: "🧹", name: "Clean / Declutter",             bio_age_field: null, tag: null },
+      { emoji: "🙏", name: "Gratitude Practice",            bio_age_field: null, tag: null },
+      { emoji: "💊", name: "Take Vitamins / Supplements",   bio_age_field: null, tag: null },
+      { emoji: "🦷", name: "Floss Teeth",                   bio_age_field: null, tag: null },
+      { emoji: "🛏️", name: "Make Bed",                      bio_age_field: null, tag: null },
+      { emoji: "📋", name: "Plan Tomorrow the Night Before",bio_age_field: null, tag: null },
+      { emoji: "📝", name: "Journal",                       bio_age_field: null, tag: null },
+      { emoji: "👥", name: "Call a Friend or Family",       bio_age_field: null, tag: null },
+      { emoji: "🎨", name: "Creative Activity",             bio_age_field: null, tag: null },
+      { emoji: "🕯️", name: "Evening Wind-Down Routine",     bio_age_field: null, tag: null },
+      { emoji: "💤", name: "Consistent Sleep Schedule",     bio_age_field: null, tag: null },
+      { emoji: "🤝", name: "Random Act of Kindness",        bio_age_field: null, tag: null },
+      { emoji: "🧘", name: "Breathing Exercises",           bio_age_field: null, tag: null },
+      { emoji: "🌙", name: "Power Nap (20 min)",            bio_age_field: null, tag: null },
+      { emoji: "🏥", name: "Health Check / Doctor Visit",   bio_age_field: null, tag: null },
+      { emoji: "📵", name: "No Social Media Today",         bio_age_field: null, tag: null },
+      { emoji: "📖", name: "Read Before Bed (no screen)",   bio_age_field: null, tag: null },
+      // ── Bad habits ──
+      { emoji: "📱", name: "Excessive Phone Time (4+ hrs)", bio_age_field: "screen_before_bed", tag: null, bio_age_inverse: false, isBad: true },
+      { emoji: "📺", name: "Binge Watched TV 4+ Hours",     bio_age_field: null, tag: null, isBad: true },
+      { emoji: "😩", name: "Procrastinated All Day",        bio_age_field: null, tag: null, isBad: true },
+      { emoji: "🌙", name: "Went to Bed Past 2AM",          bio_age_field: null, tag: null, isBad: true },
+      { emoji: "🤯", name: "Burnout / Overwhelmed",         bio_age_field: null, tag: null, isBad: true },
+      { emoji: "😡", name: "Lost Temper / Anger Episode",   bio_age_field: null, tag: null, isBad: true },
+      { emoji: "🚬", name: "Smoked Today",                  bio_age_field: "smoking", tag: null, bio_age_inverse: false, isBad: true },
+      { emoji: "🛒", name: "Impulse Shopping / Scrolled Ads",bio_age_field: null, tag: null, isBad: true },
+    ],
+  };
+
+  // ── Build suggestion panels ─────────────────────────────
+  function buildPanels() {
+    ["heart", "brain", "fitness", "food", "life"].forEach(cat => {
+      const panel = document.getElementById("panel-" + cat);
+      if (!panel) return;
+      let html = "";
+      let dividerAdded = false;
+      SUGGESTIONS[cat].forEach((h, i) => {
+        if (h.isBad && !dividerAdded) {
+          dividerAdded = true;
+          html += `<div class="hm-section-divider">⚠️ Bad Habits to Track</div>`;
+        }
+        const badgeHtml = h.tag
+          ? `<span class="hm-badge hm-badge-${cat}">${h.tag}</span>`
+          : "";
+        html += `
+          <div class="hm-row${h.isBad ? " hm-row-bad" : ""}">
+            <span class="hm-emoji">${h.emoji}</span>
+            <div class="hm-info">
+              <div class="hm-name">${escapeHtml(h.name)}</div>
+              ${badgeHtml}
+            </div>
+            <button class="hm-add-btn" id="hm-btn-${cat}-${i}"
+              onclick="addSuggestedHabit(this, '${cat}', ${i})">+ Add</button>
+          </div>`;
+      });
+      panel.innerHTML = html;
+    });
+  }
+
+  // ── Tab switching ───────────────────────────────────────
+  function switchTab(btn) {
+    document.querySelectorAll(".hm-tab").forEach(t => t.classList.remove("active"));
+    btn.classList.add("active");
+    const tab = btn.dataset.tab;
+    ["heart","brain","fitness","food","life","custom"].forEach(c => {
+      const p = document.getElementById("panel-" + c);
+      if (p) p.classList.toggle("hidden", c !== tab);
+    });
+  }
+
+  // ── Open / close modal ──────────────────────────────────
+  function openHabitModal() {
+    document.getElementById("habit-modal").classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeHabitModal(e) {
+    if (e && e.target !== document.getElementById("habit-modal") &&
+        !e.currentTarget.classList.contains("modal-close")) return;
+    document.getElementById("habit-modal").classList.add("hidden");
+    document.body.style.overflow = "";
+  }
+
+  // ── Add suggested habit ─────────────────────────────────
+  async function addSuggestedHabit(btn, cat, idx) {
+    const h = SUGGESTIONS[cat][idx];
+    btn.disabled = true;
+    btn.textContent = "…";
+    try {
+      const inverse = h.bio_age_inverse !== undefined
+        ? h.bio_age_inverse
+        : INVERSE_FIELDS.has(h.bio_age_field);
+      const habit = await apiFetch("/habits", "POST", {
+        name:            h.name,
+        emoji:           h.emoji,
+        bio_age_field:   h.bio_age_field || null,
+        bio_age_inverse: inverse,
+      });
+      habitsCache.push(habit);
+      renderHabits(habitsCache);
+      btn.textContent = "✅ Added";
+      btn.classList.add("added");
+      setTimeout(() => {
+        btn.textContent = "+ Add";
+        btn.classList.remove("added");
+        btn.disabled = false;
+      }, 2000);
+    } catch (err) {
+      btn.textContent = "Error";
+      btn.disabled = false;
+      setTimeout(() => { btn.textContent = "+ Add"; }, 2000);
+    }
+  }
+
+  // ── Add custom habit ────────────────────────────────────
+  async function addCustomHabit(e) {
+    e.preventDefault();
+    const name  = document.getElementById("custom-name").value.trim();
+    const emoji = document.getElementById("custom-emoji").value.trim() || "✅";
+    const field = document.getElementById("custom-bio-field").value;
+    const errEl = document.getElementById("hm-error");
+    errEl.classList.add("hidden");
+
+    if (!name) return;
+
+    const btn = e.submitter || e.target.querySelector("button[type=submit]");
+    if (btn) btn.disabled = true;
+
+    try {
+      const inverse = INVERSE_FIELDS.has(field);
+      const habit = await apiFetch("/habits", "POST", {
+        name,
+        emoji,
+        bio_age_field:   field || null,
+        bio_age_inverse: inverse,
+      });
+      habitsCache.push(habit);
+      renderHabits(habitsCache);
+      document.getElementById("custom-name").value  = "";
+      document.getElementById("custom-emoji").value = "";
+      document.getElementById("custom-bio-field").value = "";
+      if (btn) { btn.textContent = "✅ Added!"; }
+      setTimeout(() => {
+        if (btn) { btn.disabled = false; btn.textContent = "+ Add Habit"; }
+      }, 1800);
+    } catch (err) {
+      errEl.textContent = err.message || "Failed to add habit";
+      errEl.classList.remove("hidden");
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  // ── Render helpers ──────────────────────────────────────
+  function bioLabel(field) {
+    const MAP = {
+      exercise:         ["💪 Fitness / ❤️ Heart", "fitness"],
+      steps_10k:        ["💪 Fitness",             "fitness"],
+      stretching:       ["💪 Fitness",             "fitness"],
+      outdoor:          ["💪 Fitness",             "fitness"],
+      reading:          ["🧠 Brain",               "brain"],
+      meditation:       ["🧠 Brain",               "brain"],
+      learning:         ["🧠 Brain",               "brain"],
+      screen_before_bed:["🧠 Brain",               "brain"],
+      alcohol:          ["❤️ Heart",               "heart"],
+      smoking:          ["❤️ Heart",               "heart"],
+    };
+    return MAP[field] || null;
+  }
+
+  function updateProgress(habits) {
+    const done  = habits.filter(h => h.completed_today).length;
+    const total = habits.length;
+    const pct   = total ? Math.round((done / total) * 100) : 0;
+    document.getElementById("progress-bar").style.width = pct + "%";
+    document.getElementById("progress-label").textContent = `${done} / ${total} done`;
+  }
+
+  function renderHabits(habits) {
+    const list    = document.getElementById("habits-list");
+    const empty   = document.getElementById("habits-empty");
+    const loading = document.getElementById("habits-loading");
+
+    loading.classList.add("hidden");
+
+    if (!habits.length) {
+      empty.classList.remove("hidden");
+      list.classList.add("hidden");
+      return;
+    }
+
+    empty.classList.add("hidden");
+    list.classList.remove("hidden");
+    list.innerHTML = "";
+
+    habits.forEach(habit => {
+      const li = document.createElement("li");
+      li.className = "habit-item" + (habit.completed_today ? " done" : "");
+      li.dataset.id = habit.id;
+
+      const bio = habit.bio_age_field ? bioLabel(habit.bio_age_field) : null;
+      const badgeHtml = bio
+        ? `<span class="habit-badge habit-badge-${bio[1]}">${bio[0]}</span>`
+        : "";
+
+      li.innerHTML = `
+        <button class="check-btn" onclick="toggleHabit('${habit.id}')"
+          title="${habit.completed_today ? 'Mark incomplete' : 'Mark complete'}">
+          ${habit.completed_today ? "✅" : "⬜"}
+        </button>
+        <span class="habit-emoji">${escapeHtml(habit.emoji || "✅")}</span>
+        <div class="habit-meta">
+          <span class="habit-name">${escapeHtml(habit.name)}</span>
+          ${badgeHtml}
+        </div>
+        <div class="habit-actions">
+          <button class="btn btn-ghost btn-sm" onclick="showStats('${habit.id}')">📊</button>
+          <button class="btn btn-ghost btn-sm" onclick="showStreak('${habit.id}', '${escapeHtml(habit.name)}')">🔥</button>
+          <button class="btn btn-ghost btn-sm btn-danger" onclick="deleteHabit('${habit.id}')">🗑</button>
+        </div>
+      `;
+      list.appendChild(li);
     });
 
-    // -----------------------------------------------------------------------
-    // Render helpers
-    // -----------------------------------------------------------------------
+    updateProgress(habits);
+  }
 
-    function updateProgress(habits) {
-      const done = habits.filter(h => h.completed_today).length;
-      const total = habits.length;
-      const pct = total ? Math.round((done / total) * 100) : 0;
-      document.getElementById("progress-bar").style.width = pct + "%";
-      document.getElementById("progress-label").textContent = `${done} / ${total} done`;
-    }
+  // ── API actions ─────────────────────────────────────────
+  let habitsCache = [];
 
-    function renderHabits(habits) {
-      const list = document.getElementById("habits-list");
-      const empty = document.getElementById("habits-empty");
-      const loading = document.getElementById("habits-loading");
-
-      loading.classList.add("hidden");
-
-      if (!habits.length) {
-        empty.classList.remove("hidden");
-        list.classList.add("hidden");
-        return;
-      }
-
-      empty.classList.add("hidden");
-      list.classList.remove("hidden");
-      list.innerHTML = "";
-
-      habits.forEach(habit => {
-        const li = document.createElement("li");
-        li.className = "habit-item" + (habit.completed_today ? " done" : "");
-        li.dataset.id = habit.id;
-
-        li.innerHTML = `
-          <button class="check-btn" onclick="toggleHabit('${habit.id}')" title="${habit.completed_today ? 'Mark incomplete' : 'Mark complete'}">
-            ${habit.completed_today ? "✅" : "⬜"}
-          </button>
-          <span class="habit-name">${escapeHtml(habit.name)}</span>
-          <div class="habit-actions">
-            <button class="btn btn-ghost btn-sm" onclick="showStreak('${habit.id}', '${escapeHtml(habit.name)}')">🔥 Streak</button>
-            <button class="btn btn-ghost btn-sm btn-danger" onclick="deleteHabit('${habit.id}')">🗑</button>
-          </div>
-        `;
-        list.appendChild(li);
-      });
-
-      updateProgress(habits);
-    }
-
-    // -----------------------------------------------------------------------
-    // API actions
-    // -----------------------------------------------------------------------
-
-    let habitsCache = [];
-
-    async function loadHabits() {
-      try {
-        habitsCache = await apiFetch("/habits", "GET");
-        renderHabits(habitsCache);
-      } catch (err) {
-        if (err.status === 401) {
-          logout();
-        } else {
-          document.getElementById("habits-loading").textContent = "Failed to load habits.";
-        }
+  async function loadHabits() {
+    try {
+      habitsCache = await apiFetch("/habits", "GET");
+      renderHabits(habitsCache);
+    } catch (err) {
+      if (err.status === 401) {
+        logout();
+      } else {
+        document.getElementById("habits-loading").textContent = "Failed to load habits.";
       }
     }
+  }
 
-    async function handleAddHabit(e) {
-      e.preventDefault();
-      const input = document.getElementById("new-habit-name");
-      const errEl = document.getElementById("add-error");
-      const btn = document.getElementById("btn-add");
-      const name = input.value.trim();
-      if (!name) return;
+  async function toggleHabit(habitId) {
+    try {
+      const result = await apiFetch(`/habits/${habitId}/check`, "POST");
+      const habit  = habitsCache.find(h => h.id === habitId);
+      if (habit) habit.completed_today = result.completed;
+      renderHabits(habitsCache);
+    } catch (err) {
+      alert("Could not update habit: " + (err.message || "unknown error"));
+    }
+  }
 
-      btn.disabled = true;
-      errEl.classList.add("hidden");
+  async function deleteHabit(habitId) {
+    if (!confirm("Delete this habit and all its history?")) return;
+    try {
+      await apiFetch(`/habits/${habitId}`, "DELETE");
+      habitsCache = habitsCache.filter(h => h.id !== habitId);
+      renderHabits(habitsCache);
+    } catch (err) {
+      alert("Could not delete habit: " + (err.message || "unknown error"));
+    }
+  }
 
-      try {
-        const habit = await apiFetch("/habits", "POST", { name });
-        habitsCache.push(habit);
-        renderHabits(habitsCache);
-        input.value = "";
-      } catch (err) {
-        errEl.textContent = err.message || "Failed to add habit";
-        errEl.classList.remove("hidden");
-      } finally {
-        btn.disabled = false;
+  async function showStreak(habitId, habitName) {
+    try {
+      const data = await apiFetch(`/habits/${habitId}/streak`, "GET");
+      document.getElementById("modal-habit-name").textContent = habitName;
+      document.getElementById("modal-streak-count").textContent = data.streak;
+      document.getElementById("modal-streak-sub").textContent =
+        data.streak === 1 ? "day in a row" :
+        data.streak === 0 ? "Start today!" : "days in a row 🎉";
+      document.getElementById("streak-modal").classList.remove("hidden");
+    } catch (err) {
+      alert("Could not load streak.");
+    }
+  }
+
+  function closeStreakModal(e) {
+    if (!e || e.target === document.getElementById("streak-modal") ||
+        e.currentTarget.classList.contains("modal-close")) {
+      document.getElementById("streak-modal").classList.add("hidden");
+    }
+  }
+
+  async function showStats(habitId) {
+    try {
+      const data = await apiFetch(`/habits/${habitId}/stats`, "GET");
+      document.getElementById("stats-modal-emoji").textContent = data.emoji || "✅";
+      document.getElementById("stats-modal-name").textContent  = data.name;
+      document.getElementById("stat-streak").textContent = data.streak;
+      document.getElementById("stat-total").textContent  = data.total_completions;
+      document.getElementById("stat-time").textContent   = data.total_minutes || 0;
+
+      // Build 14-day mini calendar
+      const cal = document.getElementById("stat-calendar");
+      const doneSet = new Set((data.recent_logs || []).map(l => l.date));
+      const days = [];
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        days.push(d);
       }
-    }
+      cal.innerHTML = days.map(d => {
+        const iso   = d.toISOString().slice(0, 10);
+        const label = d.toLocaleDateString("en-US", { day: "numeric" });
+        const done  = doneSet.has(iso);
+        return `<div class="cal-day ${done ? "done" : "missed"}" title="${iso}">${label}</div>`;
+      }).join("");
 
-    async function toggleHabit(habitId) {
-      try {
-        const result = await apiFetch(`/habits/${habitId}/check`, "POST");
-        const habit = habitsCache.find(h => h.id === habitId);
-        if (habit) habit.completed_today = result.completed;
-        renderHabits(habitsCache);
-      } catch (err) {
-        alert("Could not update habit: " + (err.message || "unknown error"));
-      }
+      document.getElementById("stats-modal").classList.remove("hidden");
+    } catch (err) {
+      alert("Could not load stats.");
     }
+  }
 
-    async function deleteHabit(habitId) {
-      if (!confirm("Delete this habit and all its history?")) return;
-      try {
-        await apiFetch(`/habits/${habitId}`, "DELETE");
-        habitsCache = habitsCache.filter(h => h.id !== habitId);
-        renderHabits(habitsCache);
-      } catch (err) {
-        alert("Could not delete habit: " + (err.message || "unknown error"));
-      }
+  function closeStatsModal(e) {
+    if (!e || e.target === document.getElementById("stats-modal") ||
+        e.currentTarget.classList.contains("modal-close")) {
+      document.getElementById("stats-modal").classList.add("hidden");
     }
+  }
 
-    async function showStreak(habitId, habitName) {
-      try {
-        const data = await apiFetch(`/habits/${habitId}/streak`, "GET");
-        document.getElementById("modal-habit-name").textContent = habitName;
-        document.getElementById("modal-streak-count").textContent = data.streak;
-        document.getElementById("modal-streak-sub").textContent =
-          data.streak === 1 ? "day in a row" :
-          data.streak === 0 ? "Start today!" : "days in a row 🎉";
-        document.getElementById("streak-modal").classList.remove("hidden");
-      } catch (err) {
-        alert("Could not load streak.");
-      }
-    }
+  function logout() {
+    localStorage.removeItem("habit_token");
+    localStorage.removeItem("habit_user");
+    window.location.href = "index.html";
+  }
 
-    function closeStreakModal(e) {
-      if (!e || e.target === document.getElementById("streak-modal") || e.currentTarget.classList.contains("modal-close")) {
-        document.getElementById("streak-modal").classList.add("hidden");
-      }
-    }
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
 
-    function logout() {
-      localStorage.removeItem("habit_token");
-      localStorage.removeItem("habit_user");
-      window.location.href = "index.html";
-    }
-
-    function escapeHtml(str) {
-      return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-    }
-
-    // Boot
-    loadHabits();
-  </script>
+  // ── Boot ────────────────────────────────────────────────
+  buildPanels();
+  loadHabits();
+</script>
 </body>
 </html>
