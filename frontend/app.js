@@ -7,9 +7,7 @@
  * Place that block BEFORE this script tag.
  */
 
-const BACKEND_URL = (window._env && window._env.BACKEND_URL)
-  ? window._env.BACKEND_URL.replace(/\/$/, "")
-  : "http://localhost:5000";
+const BACKEND_URL = "https://backend-production-8a1c.up.railway.app";
 
 /**
  * Central fetch wrapper.
